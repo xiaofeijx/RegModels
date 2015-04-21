@@ -2,47 +2,45 @@
 title: "Regression models Project"
 output: html_document
 ---
+
+#Executive Summary
+In my study of mtcars dataset, I found that manual transmission can improve on the mileage (mpg) of the vehicle.
+
+I approached the problem by first looking the data by exploratory analysis. Then I fit linear models using the best subset method provided by the *leaps* package. Three models with largeest adjust $R^2$ were comprared using ANOVA.Finally, I also drew some residual plots to confirm that my linear model was indeed correct.
+
+
 ```{r}
-summary(mtcars)
-str(mtcars)
-
-fit <- lm(mpg~factor(am),data=mtcars)
-summary(fit)
-plot(fit)
-
-pairs(mtcars, main = "mtcars data")
-
-fit2 <- lm(mpg~.,data=mtcars)
-summary(fit2)
-plot(fit2)
-
-fit3 <- lm(mpg~wt+qsec+am+hp+disp,data=mtcars)
-summary(fit3)
-par(mfrow=c(2,2))
-plot(fit3)
-library(car)
-vif(fit3)
+data(mtcars)
+mtcars$am <- factor(mtcars$am,labels=c("Automatic","Manual"))
+with(mtcars,plot(am,mpg,xlab="Transmission",ylab="Miles/(US) gallon",main="Miles/(US) gallon by Transmission"))
+groupmpg <- tapply(mtcars$mpg,mtcars$am,mean)
 ```
 
-We will now use the package `leaps` to evaluate all the best-subset models.
+form the plot we can see that manual is better than automatic transmisson regrading mpg(Miles/(US) gallon), which can improve `r round(groupmpg[2]-groupmpg[1],digits=2)` Miles/(US) gallon.
+
+We have control other counders to reveal the real effect of *transmisson* of *mpg*. here I use the package `leaps` to evaluate all the best-subset models.
 ```{r}
 library(leaps)
-regfit.full=regsubsets(mpg~.,data=mtcars)
-summary(regfit.full)
-```
-It gives by default best-subsets up to size 8; lets increase that to 19, i.e. all the variables
-```{r}
 regfit.full=regsubsets(mpg~.,data=mtcars, nvmax=10)
 reg.summary=summary(regfit.full)
-names(reg.summary)
-plot(reg.summary$bic,xlab="Number of Variables",ylab="Cp")
-which.min(reg.summary$adjr2)
-points(10,reg.summary$cp[10],pch=20,col="red")
+plot(reg.summary$adjr2,xlab="Number of Variables",ylab="adjr2")
+
 ```
-There is a plot method for the `regsubsets`  object
+
+from the plot we can see that models with 3-6 variables are have relative higher adjust $R^2$. using the command ` summary(regfit.full)` will show ` wt,qsec,am` are nessary, and `hp,disp,drat ` will be added to the model  cumulativly. and I will usging ANOVA to compare these nest models.the result show there  is no significant difference betwen these models , so I will choose the simplest one.
+
 ```{r}
-plot(regfit.full,scale="Cp")
-coef(regfit.full,10)
+fit1 <- lm(mpg~wt + qsec + am,data=mtcars)
 ```
+*conclusion*: Manual is better than automatic transmisson, which will improve the mileage (mpg) by `r round(coef(fit1)[4],digits=2)` Miles/(US) gallon, with $95\%CI$ `r round(confint(fit1)[4,1],digits=2)` - `r round(confint(fit1)[4,2],digits=2)` Miles/(US) gallon.
+
+confint(fit1)[4,1]
+
+#Appendix
+```{r}
+par(mfrow=c(2,2))
+plot(fit1)
+```
+
 
 
