@@ -40,6 +40,17 @@ confint(fit1)[4,1]
 ```{r}
 par(mfrow=c(2,2))
 plot(fit1)
+library(gvlma)
+gvmodel <- gvlma(fit1)
+summary(gvmodel)
+library(car)
+mtcars$am <- mtcars$am +1
+boxTidwell(mpg~wt + qsec + am,data=mtcars)
+
+fit1 <- lm(mpg~I(wt^(-0.25)) + qsec + am,data=mtcars)
+plot(fit1)
+summary(fit1)
+summary(mtcars)
 ```
 
 
