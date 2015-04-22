@@ -4,78 +4,57 @@ output:
   html_document: default
 ---
 
+
+#Executive Summary
+In my study of mtcars dataset, I found that manual transmission can improve on the mileage (mpg) of the vehicle.
+
+
+I approached the problem by first looking the data by exploratory analysis. Then I fit linear models using the best subset method provided by the *leaps* package. Three models with largeest adjust $R^2$ were comprared using ANOVA.Finally, I also drew some residual plots to confirm that my linear model was indeed correct.
+
+
 ```{r}
-summary(mtcars)
-str(mtcars)
-
-fit <- lm(mpg~factor(am),data=mtcars)
-summary(fit)
-plot(fit)
-
-pairs(mtcars, main = "mtcars data")
-cor(mtcars)
-
-library(car)
-scatterplotMatrix(mtcars,  main="Scatterplot Matrix")
-crPlots(fit)
-
-fit2 <- lm(mpg~.,data=mtcars)
-avPlots(fit2)
-summary(fit2)
-plot(fit2)
-crPlots(fit2)
-with(mtcars,plot(disp,mpg))
-with(mtcars,plot(disp,1/mpg))
-
-library(datasets)
-fit3 <- lm(mpg~wt+qsec+am+hp+disp,data=mtcars[-c(9,31),])
-summary(fit3)
-par(mfrow=c(2,2))
-dfbetas(fit3)
-which((hatvalues(fit3))>0.4)
-plot(fit3)
-library(car)
-vif(fit3)
-summary(powerTransform(mtcars$disp))
-boxTidwell(mpg~wt+qsec+am+hp+disp,data=mtcars[-c(9,31),])
-
-fit5 <- lm(I(1/mpg)~wt+I(hp/wt)+am,data=mtcars)
-par(mfrow=c(1,1))
-plot(fit5)
-summary(fit5)
-
-#重量、排量、档位
-fit6 <- lm(mpg~wt+disp+am,data=mtcars)
-plot(fit6)
-summary(fit6)
-
-#mpg倒数
-fit7 <- lm(I(1/mpg)~wt+I(hp/wt),data=mtcars)
-par(mfrow=c(2,2))
-plot(fit7)
-summary(fit7)
-
+data(mtcars)
+mtcars$am <- factor(mtcars$am,labels=c("Automatic","Manual"))
+with(mtcars,plot(am,mpg,xlab="Transmission",ylab="Miles/(US) gallon",main="Miles/(US) gallon by Transmission"))
+groupmpg <- tapply(mtcars$mpg,mtcars$am,mean)
 ```
 
-We will now use the package `leaps` to evaluate all the best-subset models.
+form the plot we can see that manual is better than automatic transmisson regrading mpg(Miles/(US) gallon), which can improve `r round(groupmpg[2]-groupmpg[1],digits=2)` Miles/(US) gallon.
+
+We have control other counders to reveal the real effect of *transmisson* of *mpg*. here I use the package `leaps` to evaluate all the best-subset models.
 ```{r}
 library(leaps)
-regfit.full=regsubsets(mpg~.,data=mtcars)
-summary(regfit.full)
-```
-It gives by default best-subsets up to size 8; lets increase that to 19, i.e. all the variables
-```{r}
 regfit.full=regsubsets(mpg~.,data=mtcars, nvmax=10)
 reg.summary=summary(regfit.full)
-names(reg.summary)
-plot(reg.summary$bic,xlab="Number of Variables",ylab="Cp")
-which.min(reg.summary$adjr2)
-points(10,reg.summary$cp[10],pch=20,col="red")
+plot(reg.summary$adjr2,xlab="Number of Variables",ylab="adjr2")
+
 ```
-There is a plot method for the `regsubsets`  object
+
+from the plot we can see that models with 3-6 variables are have relative higher adjust $R^2$. using the command ` summary(regfit.full)` will show ` wt,qsec,am` are nessary, and `hp,disp,drat ` will be added to the model  cumulativly. and I will usging ANOVA to compare these nest models.the result show there  is no significant difference betwen these models , so I will choose the simplest one.
+
 ```{r}
-plot(regfit.full,scale="Cp")
-coef(regfit.full,10)
+fit1 <- lm(mpg~wt + qsec + am,data=mtcars)
 ```
+*conclusion*: Manual is better than automatic transmisson, which will improve the mileage (mpg) by `r round(coef(fit1)[4],digits=2)` Miles/(US) gallon, with $95\%CI$ `r round(confint(fit1)[4,1],digits=2)` - `r round(confint(fit1)[4,2],digits=2)` Miles/(US) gallon.
+
+confint(fit1)[4,1]
+
+#Appendix
+```{r,message=FALSE}
+par(mfrow=c(2,2))
+#plot(fit1)
+# library(gvlma)
+# gvmodel <- gvlma(fit1)
+# summary(gvmodel)
+library(car)
+mtcars$am <- as.numeric(mtcars$am) +1
+#boxTidwell(mpg~wt + qsec + am,data=mtcars)
+
+ fit2<- lm(mpg~I(wt^(-0.25)) + qsec + am,data=mtcars)
+# plot(fit2)
+summary(fit2)
+#summary(mtcars)
+```
+
 
 
