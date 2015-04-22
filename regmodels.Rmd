@@ -1,7 +1,9 @@
 ---
 title: "Regression models Project"
-output: html_document
+output:
+  html_document: default
 ---
+
 ```{r}
 summary(mtcars)
 str(mtcars)
@@ -11,17 +13,48 @@ summary(fit)
 plot(fit)
 
 pairs(mtcars, main = "mtcars data")
+cor(mtcars)
+
+library(car)
+scatterplotMatrix(mtcars,  main="Scatterplot Matrix")
+crPlots(fit)
 
 fit2 <- lm(mpg~.,data=mtcars)
+avPlots(fit2)
 summary(fit2)
 plot(fit2)
+crPlots(fit2)
+with(mtcars,plot(disp,mpg))
+with(mtcars,plot(disp,1/mpg))
 
-fit3 <- lm(mpg~wt+qsec+am+hp+disp,data=mtcars)
+library(datasets)
+fit3 <- lm(mpg~wt+qsec+am+hp+disp,data=mtcars[-c(9,31),])
 summary(fit3)
 par(mfrow=c(2,2))
+dfbetas(fit3)
+which((hatvalues(fit3))>0.4)
 plot(fit3)
 library(car)
 vif(fit3)
+summary(powerTransform(mtcars$disp))
+boxTidwell(mpg~wt+qsec+am+hp+disp,data=mtcars[-c(9,31),])
+
+fit5 <- lm(I(1/mpg)~wt+I(hp/wt)+am,data=mtcars)
+par(mfrow=c(1,1))
+plot(fit5)
+summary(fit5)
+
+#重量、排量、档位
+fit6 <- lm(mpg~wt+disp+am,data=mtcars)
+plot(fit6)
+summary(fit6)
+
+#mpg倒数
+fit7 <- lm(I(1/mpg)~wt+I(hp/wt),data=mtcars)
+par(mfrow=c(2,2))
+plot(fit7)
+summary(fit7)
+
 ```
 
 We will now use the package `leaps` to evaluate all the best-subset models.
