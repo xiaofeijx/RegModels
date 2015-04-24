@@ -9,7 +9,7 @@ output:
 In my study of mtcars dataset, I found that manual transmission can improve on the mileage (mpg) of the vehicle.
 
 
-I approached the problem by first looking the data by exploratory analysis. Then I fit linear models using the best subset method provided by the *leaps* package. Three models with largeest adjust $R^2$ were comprared using ANOVA.Finally, I also drew some residual plots to confirm that my linear model was indeed correct.
+I approached the problem by first looking the data by exploratory analysis. Then I fit linear models using the best subset method provided by the *leaps* package. Four models with largest adjust $R^2$ were comprared using ANOVA.Finally, I also drew some residual plots to confirm that my linear model was indeed correct.
 
 
 ```{r}
@@ -21,7 +21,7 @@ groupmpg <- tapply(mtcars$mpg,mtcars$am,mean)
 
 form the plot we can see that manual is better than automatic transmisson regrading mpg(Miles/(US) gallon), which can improve `r round(groupmpg[2]-groupmpg[1],digits=2)` Miles/(US) gallon.
 
-We have control other counders to reveal the real effect of *transmisson* of *mpg*. here I use the package `leaps` to evaluate all the best-subset models.
+But We have to control other counders(variables that may influence the relationship of *am* with *mpg*) to reveal the real effect of *transmisson* of *mpg*. here I use the package `leaps` to find the best-subset models.
 ```{r}
 library(leaps)
 regfit.full=regsubsets(mpg~.,data=mtcars, nvmax=10)
@@ -30,31 +30,38 @@ plot(reg.summary$adjr2,xlab="Number of Variables",ylab="adjr2")
 
 ```
 
-from the plot we can see that models with 3-6 variables are have relative higher adjust $R^2$. using the command ` summary(regfit.full)` will show ` wt,qsec,am` are nessary, and `hp,disp,drat ` will be added to the model  cumulativly. and I will usging ANOVA to compare these nest models.the result show there  is no significant difference betwen these models , so I will choose the simplest one.
+from the plot we can see that models with 3-6 variables are have relative higher adjust $R^2$. using the command ` summary(regfit.full)` will show variable ` wt,qsec,am` are included in all the four models(models with 3-6 variables) , and `hp,disp,drat ` will be added to the model  cumulativly. and I will usging ANOVA to compare these nest models.the result show there  is no significant difference betwen these models , so I will choose the simplest one.
 
 ```{r}
 fit1 <- lm(mpg~wt + qsec + am,data=mtcars)
 ```
+
+#Results
+mtcars$wt
 *conclusion*: Manual is better than automatic transmisson, which will improve the mileage (mpg) by `r round(coef(fit1)[4],digits=2)` Miles/(US) gallon, with $95\%CI$ `r round(confint(fit1)[4,1],digits=2)` - `r round(confint(fit1)[4,2],digits=2)` Miles/(US) gallon.
 
-confint(fit1)[4,1]
 
 #Appendix
 ```{r,message=FALSE}
 par(mfrow=c(2,2))
-#plot(fit1)
+plot(fit1)
 # library(gvlma)
 # gvmodel <- gvlma(fit1)
 # summary(gvmodel)
 library(car)
 mtcars$am <- as.numeric(mtcars$am) +1
-#boxTidwell(mpg~wt + qsec + am,data=mtcars)
+boxTidwell(mpg~wt + qsec + am,data=mtcars)
 
  fit2<- lm(mpg~I(wt^(-0.25)) + qsec + am,data=mtcars)
-# plot(fit2)
+plot(fit2)
 summary(fit2)
 #summary(mtcars)
+#write.csv(mtcars,"mtcars.csv"
+
+fit3 <- lm(mpg~wt*am +qsec,data=mtcars)
+summary(fit3)
+plot(fit3)
+# library(effects)
+# plot(effects(fit3,xlevels=list(am=c(0,1))))
 ```
-
-
 
